@@ -1,0 +1,60 @@
+services:
+  mongo:
+    image: mongo:6.0
+    container_name: roombooking-mongo
+    command: ["--replSet", "rs0", "--bind_ip_all"]
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD-SHELL", "(command -v mongosh >/dev/null 2>&1 && mongosh --eval 'db.adminCommand(\"ping\")' --quiet) || (mongo --eval 'db.adminCommand(\"ping\")') || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+      start_period: 30s
+
+  app:
+    build: .
+    container_name: roombooking-app
+    depends_on:
+      - mongo
+      - mongo-init
+      - redis
+    environment:
+      - MONGO_URL=mongodb://mongo:27017/room_booking
+      - REDIS_URL=redis://redis:6379
+      - INIT_REPLSET=1
+      - RUN_SEED=1
+      - NODE_ENV=production
+      - PORT=4000
+    ports:
+      - "4000:4000"
+    volumes:
+      - .:/usr/src/app
+    entrypoint: ["/usr/src/app/scripts/docker-entrypoint.sh"]
+    command: ["npm", "start"]
+
+  mongo-init:
+    image: mongo:6.0
+    container_name: roombooking-mongo-init
+    depends_on:
+      - mongo
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["\n# Keep trying to initiate the replset with a config that uses the service name 'mongo:27017' so it is resolvable by other containers.\nuntil (command -v mongosh >/dev/null 2>&1 && mongosh --host mongo --eval \"rs.initiate({_id: 'rs0', members:[{_id:0, host: 'mongo:27017'}]})\" --quiet >/dev/null 2>&1) || (command -v mongo >/dev/null 2>&1 && mongo --host mongo --eval \"rs.initiate({_id: 'rs0', members:[{_id:0, host: 'mongo:27017'}]})\" >/dev/null 2>&1); do echo '[mongo-init] waiting for mongo...'; sleep 1; done; echo '[mongo-init] replset initiated'; sleep 1\n"]
+    restart: 'no'
+
+  redis:
+    image: redis:7.0
+    container_name: roombooking-redis
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mongo_data:
+  redis_data:

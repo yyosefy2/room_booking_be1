@@ -1,0 +1,512 @@
+openapi: 3.0.3
+info:
+  title: Room Booking API
+  version: 1.0.0
+  description: OpenAPI spec for the Room Booking backend (be_ms).
+servers:
+  - url: http://localhost:4000
+    description: Local development server
+paths:
+  /api/v1/users/register:
+    post:
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Created - returns token and public user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/UserPublic'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /api/v1/users/login:
+    post:
+      summary: Authenticate user and return JWT
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/UserPublic'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/rooms/search:
+    get:
+      summary: Search available rooms in a date range
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: start
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: end
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: List of rooms with availability
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RoomAvailability'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/booking:
+    post:
+      summary: Create a booking
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingRequest'
+      responses:
+        '201':
+          description: Booking created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '423':
+          description: Resource busy (lock)
+
+  /api/v1/bookings:
+    get:
+      summary: Get current user's bookings
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: List of bookings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  bookings:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Booking'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/bookings/{id}:
+    get:
+      summary: Get booking by id for current user
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Booking details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/bookings/{id}/cancel:
+    patch:
+      summary: Cancel a booking
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Booking cancelled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  booking:
+                    $ref: '#/components/schemas/Booking'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/rooms/{id}:
+    get:
+      summary: Get room details
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Room details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Room'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/rooms/{id}/availability:
+    get:
+      summary: Get room availability for a date range
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: start
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: end
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Availability range
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  room_id:
+                    type: string
+                  room_name:
+                    type: string
+                  start_date:
+                    type: string
+                    format: date
+                  end_date:
+                    type: string
+                    format: date
+                  availability:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Availability'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+    Unauthorized:
+      description: Missing or invalid auth token
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+    Conflict:
+      description: Conflict (e.g., duplicate resource)
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+
+  schemas:
+    # Reuse and adapt definitions from config/schema.json
+    User:
+      type: object
+      properties:
+        _id:
+          type: string
+        email:
+          type: string
+          format: email
+        password_hash:
+          type: string
+        name:
+          type: string
+      required:
+        - name
+        - email
+        - password_hash
+
+    UserPublic:
+      type: object
+      properties:
+        _id:
+          type: string
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        role:
+          type: string
+
+    Room:
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+        location:
+          type: string
+        capacity:
+          type: integer
+        price_cents:
+          type: integer
+      required:
+        - name
+        - capacity
+        - price_cents
+
+    Availability:
+      type: object
+      properties:
+        _id:
+          type: string
+        room_id:
+          type: string
+        date:
+          type: string
+          format: date
+        available_units:
+          type: integer
+      required:
+        - room_id
+        - date
+        - available_units
+
+    Booking:
+      type: object
+      properties:
+        _id:
+          type: string
+        user_id:
+          type: string
+        room_id:
+          type: string
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        created_at:
+          type: string
+          format: date-time
+        total_price_cents:
+          type: integer
+        status:
+          type: string
+      required:
+        - user_id
+        - room_id
+        - start_date
+        - end_date
+
+    RegisterRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 6
+        name:
+          type: string
+      required:
+        - name
+        - email
+        - password
+
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+      required:
+        - email
+        - password
+
+    BookingRequest:
+      type: object
+      properties:
+        room_id:
+          type: string
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        quantity:
+          type: integer
+          minimum: 1
+          default: 1
+      required:
+        - room_id
+        - start_date
+        - end_date
+
+    SearchRoomsQuery:
+      type: object
+      properties:
+        start:
+          type: string
+          format: date
+        end:
+          type: string
+          format: date
+      required:
+        - start
+        - end
+
+    RoomAvailability:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        location:
+          type: string
+        floor:
+          type: integer
+        capacity:
+          type: integer
+        price_cents:
+          type: integer
+        amenities:
+          type: array
+          items:
+            type: string
+        images:
+          type: array
+          items:
+            type: string
+        available_units:
+          type: integer

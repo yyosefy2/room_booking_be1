@@ -1,0 +1,12 @@
+node_modules/
+.env
+*.log
+npm-debug.log*
+docker-compose.override.yml
+.DS_Store
+.vscode/
+dist/
+coverage/
+.idea/
+/.cache
+/*.tar

@@ -1,0 +1,46 @@
+{
+  "name": "room-booking-backend",
+  "version": "1.0.0",
+  "description": "Room booking system backend with MongoDB",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "seed": "node src/mongodb/seed.js",
+    "docker:start": "node src/server.js",
+    "docker:build": "docker build -t room-booking-backend:latest .",
+    "docker:compose:up": "docker-compose up --build",
+    "docker:compose:up:detached": "docker-compose up -d --build",
+    "docker:compose:all": "docker-compose up -d --build && docker-compose logs -f",
+    "docker:compose:down": "docker-compose down",
+    "docker:compose:logs": "docker-compose logs -f",
+    "docker:seed": "docker-compose run --rm app sh -c \"node src/mongodb/seed.js\"",
+    "db:check": "node src/mongodb/dbUtils.js check",
+    "db:indexes": "node src/mongodb/dbUtils.js indexes",
+    "db:stats": "node src/mongodb/dbUtils.js stats",
+    "db:verify": "node src/mongodb/dbUtils.js verify",
+    "db:cleanup": "node src/mongodb/dbUtils.js cleanup",
+    "db:cleanup-live": "node src/mongodb/dbUtils.js cleanup --live",
+    "db:ensure-availability": "node src/mongodb/dbUtils.js ensure-availability",
+    "db:all": "node src/mongodb/dbUtils.js all"
+  },
+  "dependencies": {
+    "ajv": "^8.12.0",
+    "ajv-formats": "^2.1.1",
+    "bcrypt": "^5.1.1",
+    "bcryptjs": "^2.4.3",
+    "body-parser": "^1.20.0",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "express-rate-limit": "^6.11.2",
+    "ioredis": "^5.8.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^9.0.0",
+    "pg": "^8.8.0",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
+

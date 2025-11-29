@@ -1,0 +1,186 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Room Booking API Schema",
+  "definitions": {
+    "User": {
+      "type": "object",
+      "properties": {
+        "_id": {
+          "type": "string",
+          "format": "objectId"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Unique user email"
+        },
+        "password_hash": {
+          "type": "string",
+          "description": "Bcrypt hashed password"
+        },
+        "name": {
+          "type": "string",
+          "description": "User's full name"
+        }
+      },
+      "required": ["name","email", "password_hash"]
+    },
+    "Room": {
+      "type": "object",
+      "properties": {
+        "_id": {
+          "type": "string",
+          "format": "objectId"
+        },
+        "name": {
+          "type": "string",
+          "description": "Room name"
+        },
+        "location": {
+          "type": "string",
+          "description": "Room location or address"
+        },
+        "capacity": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum number of people"
+        },
+        "price_cents": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Price in cents"
+        }
+      },
+      "required": ["name", "capacity", "price_cents"]
+    },
+    "Availability": {
+      "type": "object",
+      "properties": {
+        "_id": {
+          "type": "string",
+          "format": "objectId"
+        },
+        "room_id": {
+          "type": "string",
+          "format": "objectId",
+          "description": "Reference to Room"
+        },
+        "date": {
+          "type": "string",
+          "format": "date",
+          "description": "Available date"
+        },
+        "available_units": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of available units"
+        }
+      },
+      "required": ["room_id", "date", "available_units"]
+    },
+    "Booking": {
+      "type": "object",
+      "properties": {
+        "_id": {
+          "type": "string",
+          "format": "objectId"
+        },
+        "user_id": {
+          "type": "string",
+          "format": "objectId",
+          "description": "Reference to User"
+        },
+        "room_id": {
+          "type": "string",
+          "format": "objectId",
+          "description": "Reference to Room"
+        },
+        "start_date": {
+          "type": "string",
+          "format": "date",
+          "description": "Booking start date"
+        },
+        "end_date": {
+          "type": "string",
+          "format": "date",
+          "description": "Booking end date"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Booking creation timestamp"
+        }
+      },
+      "required": ["user_id", "room_id", "start_date", "end_date"]
+    },
+    "RegisterRequest": {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email"
+        },
+        "password": {
+          "type": "string",
+          "minLength": 6
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": ["name","email", "password"]
+    },
+    "LoginRequest": {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email"
+        },
+        "password": {
+          "type": "string"
+        }
+      },
+      "required": ["email", "password"]
+    },
+    "BookingRequest": {
+      "type": "object",
+      "properties": {
+        "room_id": {
+          "type": "string",
+          "format": "objectId"
+        },
+        "start_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "end_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "quantity": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1
+        }
+      },
+      "required": ["room_id", "start_date", "end_date"]
+    },
+    "SearchRoomsQuery": {
+      "type": "object",
+      "properties": {
+        "start": {
+          "type": "string",
+          "format": "date",
+          "description": "Search start date"
+        },
+        "end": {
+          "type": "string",
+          "format": "date",
+          "description": "Search end date"
+        }
+      },
+      "required": ["start", "end"]
+    }
+  }
+}
