@@ -151,12 +151,21 @@
           "format": "objectId"
         },
         "start_date": {
-          "type": "string",
-          "format": "date"
+          "oneOf": [
+            { "type": "string", "format": "date" },
+            { "type": "string", "format": "date-time" }
+          ]
         },
         "end_date": {
+          "oneOf": [
+            { "type": "string", "format": "date" },
+            { "type": "string", "format": "date-time" }
+          ]
+        },
+        "contact_email": {
           "type": "string",
-          "format": "date"
+          "format": "email",
+          "description": "Contact email for the booking"
         },
         "quantity": {
           "type": "integer",
@@ -164,20 +173,24 @@
           "default": 1
         }
       },
-      "required": ["room_id", "start_date", "end_date"]
+      "required": ["room_id", "start_date", "end_date", "contact_email"]
     },
     "SearchRoomsQuery": {
       "type": "object",
       "properties": {
         "start": {
-          "type": "string",
-          "format": "date",
-          "description": "Search start date"
+          "oneOf": [
+            { "type": "string", "format": "date" },
+            { "type": "string", "format": "date-time" }
+          ],
+          "description": "Search start date (date or date-time)"
         },
         "end": {
-          "type": "string",
-          "format": "date",
-          "description": "Search end date"
+          "oneOf": [
+            { "type": "string", "format": "date" },
+            { "type": "string", "format": "date-time" }
+          ],
+          "description": "Search end date (date or date-time)"
         }
       },
       "required": ["start", "end"]

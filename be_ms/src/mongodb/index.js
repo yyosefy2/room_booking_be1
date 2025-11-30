@@ -392,6 +392,18 @@ const BookingSchema = new mongoose.Schema({
     trim: true,
     maxlength: [1000, 'Notes cannot exceed 1000 characters'],
   },
+  contact_email: {
+    type: String,
+    trim: true,
+    lowercase: true,
+    validate: {
+      validator: function(v) {
+        if (!v) return true;
+        return /^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/.test(v);
+      },
+      message: props => `${props.value} is not a valid email address`,
+    },
+  },
   created_at: {
     type: Date,
     default: Date.now,
@@ -449,8 +461,9 @@ BookingSchema.methods.cancel = async function(reason) {
 BookingSchema.methods.toPublicJSON = function() {
   return {
     id: this._id,
-    user_id: this.user_id,
+    user_id: this.user_id && this.user_id._id ? this.user_id._id : this.user_id,
     room_id: this.room_id,
+    user_email: (this.user_id && this.user_id.email) ? this.user_id.email : (this.contact_email || null),
     start_date: this.start_date,
     end_date: this.end_date,
     quantity: this.quantity,
@@ -459,6 +472,7 @@ BookingSchema.methods.toPublicJSON = function() {
     total_price_dollars: this.total_price_dollars,
     status: this.status,
     notes: this.notes,
+    contact_email: this.contact_email,
     created_at: this.created_at,
   };
 };

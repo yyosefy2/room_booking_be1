@@ -14,11 +14,17 @@ const { acquireLock, releaseLock, getIdempotencyKey, setIdempotencyKey } = requi
 
 const app = express();
 
-// Enable CORS for frontend
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+// Allow all origins by reflecting the request origin — keeps credentials working
+const corsOptions = {
+  origin: true, // reflect request origin
   credentials: true,
-}));
+  allowedHeaders: ['Content-Type', 'Authorization', 'Idempotency-Key'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  optionsSuccessStatus: 204,
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 app.use(bodyParser.json());
 
@@ -261,6 +267,8 @@ app.get('/api/v1/rooms/search', auth, validate('searchRooms'), validateSearchDat
           amenities: '$room.amenities',
           images: '$room.images',
           available_units: '$minAvailable',
+          free_units: '$minAvailable',
+          available_days: '$totalDays',
         },
       },
       { $sort: { location: 1, name: 1 } },
@@ -288,6 +296,7 @@ app.post('/api/v1/booking', auth, validate('booking'), validateDateRange, (req, 
 }, async (req, res) => {
   const { room_id, start_date, end_date, quantity, notes } = req.body;
   const userId = req.user.id;
+  const userEmail = req.user.email || null;
   const qty = parseInt(quantity || 1, 10);
 
   // Redis idempotency
@@ -308,6 +317,16 @@ app.post('/api/v1/booking', auth, validate('booking'), validateDateRange, (req, 
 
   try {
     if (session) await session.startTransaction();
+
+    let contactEmail = req.body.contact_email || null;
+    if (contactEmail) {
+      if (String(contactEmail).toLowerCase() !== String(userEmail).toLowerCase()) {
+        if (session) await session.abortTransaction();
+        return res.status(403).send({ error: 'contact_email must match authenticated user email' });
+      }
+    } else {
+      contactEmail = userEmail;
+    }
 
     // Verify room exists and is active
     const roomFindQ = Room.findOne({ _id: room_id, is_active: true });
@@ -350,6 +369,17 @@ app.post('/api/v1/booking', auth, validate('booking'), validateDateRange, (req, 
 
     // Create booking with calculated price
     const createOpts = session ? { session } : undefined;
+    // Verify contact_email belongs to authenticated user, or default to user's email
+    // let contactEmail = req.body.contact_email || null;
+    // if (contactEmail) {
+    //   if (String(contactEmail).toLowerCase() !== String(userEmail).toLowerCase()) {
+    //     if (session) await session.abortTransaction();
+    //     return res.status(403).send({ error: 'contact_email must match authenticated user email' });
+    //   }
+    // } else {
+    //   contactEmail = userEmail;
+    // }
+
     const booking = await Booking.create(
       [
         {
@@ -361,6 +391,7 @@ app.post('/api/v1/booking', auth, validate('booking'), validateDateRange, (req, 
           total_price_cents: totalPrice,
           status: 'confirmed',
           notes: notes || null,
+          contact_email: contactEmail,
         },
       ],
       createOpts,
