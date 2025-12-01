@@ -364,15 +364,6 @@ const BookingSchema = new mongoose.Schema({
       message: 'Quantity must be an integer',
     },
   },
-  total_price_cents: {
-    type: Number,
-    required: [true, 'Total price is required'],
-    min: [0, 'Price cannot be negative'],
-    validate: {
-      validator: Number.isInteger,
-      message: 'Price must be an integer (cents)',
-    },
-  },
   status: {
     type: String,
     enum: ['pending', 'confirmed', 'cancelled', 'completed'],
@@ -436,11 +427,6 @@ BookingSchema.virtual('nights').get(function() {
   return Math.ceil((this.end_date - this.start_date) / (1000 * 60 * 60 * 24));
 });
 
-// Virtual for price in dollars
-BookingSchema.virtual('total_price_dollars').get(function() {
-  return (this.total_price_cents / 100).toFixed(2);
-});
-
 // Instance method to cancel booking
 BookingSchema.methods.cancel = async function(reason) {
   if (this.status === 'cancelled') {
@@ -468,8 +454,6 @@ BookingSchema.methods.toPublicJSON = function() {
     end_date: this.end_date,
     quantity: this.quantity,
     nights: this.nights,
-    total_price_cents: this.total_price_cents,
-    total_price_dollars: this.total_price_dollars,
     status: this.status,
     notes: this.notes,
     contact_email: this.contact_email,

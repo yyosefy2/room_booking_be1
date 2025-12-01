@@ -341,9 +341,8 @@ app.post('/api/v1/booking', auth, validate('booking'), validateDateRange, (req, 
     const endDate = normalizeDate(new Date(end_date));
     const days = getDateRange(startDate, endDate);
 
-    // Calculate total price
+    // Calculate total price (removed - price calculation handled elsewhere)
     const nights = days.length;
-    const totalPrice = room.price_cents * nights * qty;
 
     // Decrement availability for each day
     for (const date of days) {
@@ -388,7 +387,6 @@ app.post('/api/v1/booking', auth, validate('booking'), validateDateRange, (req, 
           start_date: startDate,
           end_date: endDate,
           quantity: qty,
-          total_price_cents: totalPrice,
           status: 'confirmed',
           notes: notes || null,
           contact_email: contactEmail,
@@ -426,75 +424,75 @@ app.post('/api/v1/booking', auth, validate('booking'), validateDateRange, (req, 
     await releaseLock(lockKey, token);
   }
 });
-
-// ---------------------- GET USER BOOKINGS ----------------------
-app.get('/api/v1/bookings', auth, async (req, res) => {
-  try {
-    const { status, start_date, end_date } = req.query;
-    const userId = req.user.id;
-
-    let query = { user_id: userId };
-
-    // Filter by status if provided
-    if (status) {
-      query.status = status;
-    }
-
-    // Filter by date range if provided
-    if (start_date || end_date) {
-      query.$or = [];
-      if (start_date && end_date) {
-        const start = normalizeDate(new Date(start_date));
-        const end = normalizeDate(new Date(end_date));
-        query.$or.push(
-          { start_date: { $gte: start, $lte: end } },
-          { end_date: { $gte: start, $lte: end } },
-          { start_date: { $lte: start }, end_date: { $gte: end } },
-        );
-      } else if (start_date) {
-        const start = normalizeDate(new Date(start_date));
-        query.$or.push({ start_date: { $gte: start } });
-      } else if (end_date) {
-        const end = normalizeDate(new Date(end_date));
-        query.$or.push({ end_date: { $lte: end } });
-      }
-    }
-
-    const bookings = await Booking.find(query)
-      .populate('room_id', 'name location capacity price_cents amenities images')
-      .sort({ start_date: -1, created_at: -1 });
-
-    res.send({
-      bookings: bookings.map(b => b.toPublicJSON()),
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).send({ error: 'server error' });
-  }
-});
-
-// ---------------------- GET BOOKING BY ID ----------------------
-app.get('/api/v1/bookings/:id', auth, async (req, res) => {
-  try {
-    const bookingId = req.params.id;
-    const userId = req.user.id;
-
-    const booking = await Booking.findOne({ _id: bookingId, user_id: userId })
-      .populate('room_id', 'name description location floor capacity price_cents amenities images')
-      .populate('user_id', 'email name');
-
-    if (!booking) {
-      return res.status(404).send({ error: 'Booking not found' });
-    }
-
-    res.send({ booking: booking.toPublicJSON() });
-  } catch (err) {
-    if (err.name === 'CastError') {
-      return res.status(400).send({ error: 'Invalid booking ID format' });
-    }
-    console.error(err);
-    res.status(500).send({ error: 'server error' });
-  }
-});
+//
+// // ---------------------- GET USER BOOKINGS ----------------------
+// app.get('/api/v1/bookings', auth, async (req, res) => {
+//   try {
+//     const { status, start_date, end_date } = req.query;
+//     const userId = req.user.id;
+//
+//     let query = { user_id: userId };
+//
+//     // Filter by status if provided
+//     if (status) {
+//       query.status = status;
+//     }
+//
+//     // Filter by date range if provided
+//     if (start_date || end_date) {
+//       query.$or = [];
+//       if (start_date && end_date) {
+//         const start = normalizeDate(new Date(start_date));
+//         const end = normalizeDate(new Date(end_date));
+//         query.$or.push(
+//           { start_date: { $gte: start, $lte: end } },
+//           { end_date: { $gte: start, $lte: end } },
+//           { start_date: { $lte: start }, end_date: { $gte: end } },
+//         );
+//       } else if (start_date) {
+//         const start = normalizeDate(new Date(start_date));
+//         query.$or.push({ start_date: { $gte: start } });
+//       } else if (end_date) {
+//         const end = normalizeDate(new Date(end_date));
+//         query.$or.push({ end_date: { $lte: end } });
+//       }
+//     }
+//
+//     const bookings = await Booking.find(query)
+//       .populate('room_id', 'name location capacity price_cents amenities images')
+//       .sort({ start_date: -1, created_at: -1 });
+//
+//     res.send({
+//       bookings: bookings.map(b => b.toPublicJSON()),
+//     });
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).send({ error: 'server error' });
+//   }
+// });
+//
+// // ---------------------- GET BOOKING BY ID ----------------------
+// app.get('/api/v1/bookings/:id', auth, async (req, res) => {
+//   try {
+//     const bookingId = req.params.id;
+//     const userId = req.user.id;
+//
+//     const booking = await Booking.findOne({ _id: bookingId, user_id: userId })
+//       .populate('room_id', 'name description location floor capacity price_cents amenities images')
+//       .populate('user_id', 'email name');
+//
+//     if (!booking) {
+//       return res.status(404).send({ error: 'Booking not found' });
+//     }
+//
+//     res.send({ booking: booking.toPublicJSON() });
+//   } catch (err) {
+//     if (err.name === 'CastError') {
+//       return res.status(400).send({ error: 'Invalid booking ID format' });
+//     }
+//     console.error(err);
+//     res.status(500).send({ error: 'server error' });
+//   }
+// });
 
 module.exports = app;

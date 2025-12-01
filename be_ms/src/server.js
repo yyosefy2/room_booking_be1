@@ -5,7 +5,7 @@ const config = require('../config/config.json');
 const port = process.env.PORT || config.server.port;
 
 
-const router = express.Router();
+// const router = express.Router();
 const app = express();
 app.use(express.json());
 

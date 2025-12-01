@@ -412,8 +412,6 @@ components:
         created_at:
           type: string
           format: date-time
-        total_price_cents:
-          type: integer
         status:
           type: string
       required:

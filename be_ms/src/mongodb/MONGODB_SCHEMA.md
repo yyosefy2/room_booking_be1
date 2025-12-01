@@ -146,7 +146,6 @@ Stores room booking records.
   start_date: Date (required, indexed),
   end_date: Date (required, indexed),
   quantity: Number (default: 1, min: 1, max: 100, integer),
-  total_price_cents: Number (required, min: 0, integer),
   status: String (enum: ['pending', 'confirmed', 'cancelled', 'completed'], indexed),
   cancellation_reason: String (optional, max 500 chars),
   cancelled_at: Date,
@@ -171,12 +170,10 @@ Stores room booking records.
 **Validations:**
 - End date must be after start date
 - Quantity must be between 1-100
-- Total price must be non-negative integer
 - Status must be one of: pending, confirmed, cancelled, completed
 
 **Virtual Fields:**
 - `nights`: Computed number of nights (end_date - start_date)
-- `total_price_dollars`: Computed price in dollars
 
 **Relationships:**
 - `user_id` references `User._id`
